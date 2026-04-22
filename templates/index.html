@@ -1,52 +1,112 @@
 {% extends "base.html" %}
 {% block content %}
 <h1><i class="fas fa-file-invoice-dollar"></i> Insurance Claim Fraud Detection</h1>
+<p style="text-align:center; color:var(--text-secondary);">Fill the details below to check if a claim is fraudulent.</p>
+
 <form method="POST" action="/predict" id="fraudForm">
-    <label><i class="fas fa-dollar-sign"></i> Claim Amount ($)</label>
-    <input type="number" step="0.01" name="claim_amount" placeholder="e.g., 5000" required>
+    <label><i class="fas fa-user"></i> Policyholder Age <span style="color:#f87171;">*</span></label>
+    <input type="number" min="18" max="100" name="age" id="age" placeholder="e.g., 35" required>
+    <div class="error-message" id="ageError"></div>
 
-    <label><i class="far fa-clock"></i> Incident Hour (0-23)</label>
-    <input type="number" min="0" max="23" name="incident_hour" required>
+    <label><i class="fas fa-car"></i> Vehicle Age (years) <span style="color:#f87171;">*</span></label>
+    <input type="number" min="0" max="30" name="vehicle_age" id="vehicle_age" placeholder="e.g., 5" required>
+    <div class="error-message" id="vehicleAgeError"></div>
 
-    <label><i class="fas fa-exclamation-triangle"></i> Incident Severity (1-5)</label>
-    <select name="incident_severity" required>
-        <option value="1">1 - Minor</option>
-        <option value="2">2 - Moderate</option>
-        <option value="3">3 - Serious</option>
-        <option value="4">4 - Severe</option>
-        <option value="5">5 - Critical</option>
-    </select>
+    <label><i class="fas fa-history"></i> Past Number of Claims <span style="color:#f87171;">*</span></label>
+    <input type="number" min="0" max="10" name="past_claims" id="past_claims" placeholder="e.g., 0" required>
+    <div class="error-message" id="pastClaimsError"></div>
 
-    <label><i class="fas fa-car"></i> Number of Vehicles Involved</label>
-    <input type="number" min="1" max="5" name="num_vehicles" required>
+    <label><i class="fas fa-truck"></i> Number of Cars Involved <span style="color:#f87171;">*</span></label>
+    <input type="number" min="1" max="5" name="num_cars" id="num_cars" placeholder="e.g., 1" required>
+    <div class="error-message" id="numCarsError"></div>
 
-    <label><i class="fas fa-user"></i> Age of Policyholder</label>
-    <input type="number" min="18" max="100" name="age_policyholder" required>
+    <label><i class="fas fa-calendar-day"></i> Days since Policy to Accident <span style="color:#f87171;">*</span></label>
+    <input type="number" min="0" max="1000" name="days_accident" id="days_accident" placeholder="e.g., 150" required>
+    <div class="error-message" id="daysAccidentError"></div>
 
-    <label><i class="fas fa-history"></i> Prior Claims (count)</label>
-    <input type="number" min="0" max="10" name="prior_claims" required>
+    <label><i class="fas fa-calendar-check"></i> Days since Policy to Claim <span style="color:#f87171;">*</span></label>
+    <input type="number" min="0" max="1000" name="days_claim" id="days_claim" placeholder="e.g., 160" required>
+    <div class="error-message" id="daysClaimError"></div>
 
-    <button type="submit"><i class="fas fa-microchip"></i> Predict Fraud</button>
+    <label><i class="fas fa-star"></i> Driver Rating (1-5) <span style="color:#f87171;">*</span></label>
+    <input type="number" min="1" max="5" name="driver_rating" id="driver_rating" placeholder="e.g., 3" required>
+    <div class="error-message" id="driverRatingError"></div>
+
+    <button type="submit" id="predictBtn"><i class="fas fa-microchip"></i> Predict Fraud</button>
 </form>
 
-<div id="resultArea">
-    {% if prediction %}
-    <div class="result {{ 'fraud' if prediction.fraud else 'legit' }}">
-        <i class="fas {{ 'fa-skull-crosswalk' if prediction.fraud else 'fa-check-circle' }}" style="font-size: 2rem;"></i>
-        <h3>{{ prediction.message }}</h3>
-        <p><strong>Confidence Score:</strong> {{ prediction.confidence }} / 1.00</p>
-        <p><strong>Assigned Cluster:</strong> {{ prediction.cluster }}</p>
-        <div style="margin-top:10px; background:#00000033; border-radius:10px; padding:5px;">
-            <small>Powered by Isolation Forest + KMeans</small>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if error %}
-    <div class="result error">
-        <i class="fas fa-exclamation-circle"></i>
-        <p><strong>Error:</strong> {{ error }}</p>
-    </div>
-    {% endif %}
+<div style="margin-top: 30px; text-align: center; color: var(--text-secondary);">
+    <small>After prediction, you will be redirected to the Dashboard with visual insights.</small>
 </div>
+
+<script>
+    // Real-time validation functions
+    function validateField(value, min, max, errorElement, message) {
+        if (value < min || value > max) {
+            errorElement.innerText = message;
+            return false;
+        } else {
+            errorElement.innerText = '';
+            return true;
+        }
+    }
+    const ageInput = document.getElementById('age');
+    const ageError = document.getElementById('ageError');
+    ageInput.addEventListener('input', () => {
+        validateField(parseInt(ageInput.value), 18, 100, ageError, 'Age must be between 18 and 100');
+    });
+    const vehicleAge = document.getElementById('vehicle_age');
+    const vehicleAgeError = document.getElementById('vehicleAgeError');
+    vehicleAge.addEventListener('input', () => {
+        validateField(parseInt(vehicleAge.value), 0, 30, vehicleAgeError, 'Vehicle age must be between 0 and 30 years');
+    });
+    const pastClaims = document.getElementById('past_claims');
+    const pastClaimsError = document.getElementById('pastClaimsError');
+    pastClaims.addEventListener('input', () => {
+        validateField(parseInt(pastClaims.value), 0, 10, pastClaimsError, 'Past claims must be between 0 and 10');
+    });
+    const numCars = document.getElementById('num_cars');
+    const numCarsError = document.getElementById('numCarsError');
+    numCars.addEventListener('input', () => {
+        validateField(parseInt(numCars.value), 1, 5, numCarsError, 'Number of cars must be between 1 and 5');
+    });
+    const daysAccident = document.getElementById('days_accident');
+    const daysAccidentError = document.getElementById('daysAccidentError');
+    daysAccident.addEventListener('input', () => {
+        validateField(parseInt(daysAccident.value), 0, 1000, daysAccidentError, 'Days must be between 0 and 1000');
+    });
+    const daysClaim = document.getElementById('days_claim');
+    const daysClaimError = document.getElementById('daysClaimError');
+    daysClaim.addEventListener('input', () => {
+        validateField(parseInt(daysClaim.value), 0, 1000, daysClaimError, 'Days must be between 0 and 1000');
+    });
+    const driverRating = document.getElementById('driver_rating');
+    const driverRatingError = document.getElementById('driverRatingError');
+    driverRating.addEventListener('input', () => {
+        validateField(parseInt(driverRating.value), 1, 5, driverRatingError, 'Driver rating must be between 1 and 5');
+    });
+
+    // Form submit loading spinner
+    const form = document.getElementById('fraudForm');
+    const predictBtn = document.getElementById('predictBtn');
+    form.addEventListener('submit', function(e) {
+        // Check all validations again before submit
+        let isValid = true;
+        if (!validateField(parseInt(ageInput.value), 18, 100, ageError, 'Age must be between 18 and 100')) isValid = false;
+        if (!validateField(parseInt(vehicleAge.value), 0, 30, vehicleAgeError, 'Vehicle age must be between 0 and 30')) isValid = false;
+        if (!validateField(parseInt(pastClaims.value), 0, 10, pastClaimsError, 'Past claims must be between 0 and 10')) isValid = false;
+        if (!validateField(parseInt(numCars.value), 1, 5, numCarsError, 'Number of cars must be between 1 and 5')) isValid = false;
+        if (!validateField(parseInt(daysAccident.value), 0, 1000, daysAccidentError, 'Days must be between 0 and 1000')) isValid = false;
+        if (!validateField(parseInt(daysClaim.value), 0, 1000, daysClaimError, 'Days must be between 0 and 1000')) isValid = false;
+        if (!validateField(parseInt(driverRating.value), 1, 5, driverRatingError, 'Driver rating must be between 1 and 5')) isValid = false;
+        
+        if (!isValid) {
+            e.preventDefault();
+            return;
+        }
+        
+        predictBtn.disabled = true;
+        predictBtn.innerHTML = '<span class="spinner"></span> Predicting...';
+    });
+</script>
 {% endblock %}

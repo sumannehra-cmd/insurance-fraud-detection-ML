@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1><i class="fas fa-history"></i> Recent Predictions</h1>
+{% if history %}
+    <table style="width:100%; border-collapse: collapse;">
+        <thead>
+            <tr><th>Time</th><th>Age</th><th>Vehicle Age</th><th>Past Claims</th><th>Cars</th><th>Days Accident</th><th>Days Claim</th><th>Rating</th><th>Result</th><th>Confidence</th></tr>
+        </thead>
+        <tbody>
+        {% for entry in history %}
+            <tr style="border-bottom:1px solid var(--border-color);">
+                <td>{{ entry.timestamp }}</td>
+                <td>{{ entry.features.age }}</td>
+                <td>{{ entry.features.vehicle_age }}</td>
+                <td>{{ entry.features.past_claims }}</td>
+                <td>{{ entry.features.num_cars }}</td>
+                <td>{{ entry.features.days_accident }}</td>
+                <td>{{ entry.features.days_claim }}</td>
+                <td>{{ entry.features.driver_rating }}</td>
+                <td style="color:{% if entry.result.fraud %}#f87171{% else %}#4ade80{% endif %}">{{ entry.result.message }}</td>
+                <td>{{ entry.result.confidence }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No predictions yet. Go to <a href="/fraud">Detection Page</a> to make a prediction.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+<h1><i class="fas fa-chart-pie"></i> Fraud Detection Dashboard</h1>
+<p style="text-align:center; color:var(--text-secondary);">Real-time insights from 15,420 insurance claims</p>
+
+<div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 30px;">
+    <div style="background: var(--card-bg); padding: 20px; border-radius: 20px; text-align: center; flex:1;">
+        <h3>Total Claims</h3>
+        <p style="font-size: 2rem; color:#38bdf8;">{{ stats.total_claims }}</p>
+    </div>
+    <div style="background: var(--card-bg); padding: 20px; border-radius: 20px; text-align: center; flex:1;">
+        <h3>Fraudulent Claims</h3>
+        <p style="font-size: 2rem; color:#ef4444;">{{ stats.fraud_count }}</p>
+    </div>
+    <div style="background: var(--card-bg); padding: 20px; border-radius: 20px; text-align: center; flex:1;">
+        <h3>Fraud Percentage</h3>
+        <p style="font-size: 2rem; color:#f97316;">{{ stats.fraud_percent }}%</p>
+    </div>
+</div>
+
+{% if prediction %}
+<div id="reportContent" class="result {{ 'fraud' if prediction.fraud else 'legit' }}" style="margin-bottom: 30px; padding: 20px; border-radius: 20px; text-align: center;">
+    <i class="fas {{ 'fa-skull-crosswalk' if prediction.fraud else 'fa-check-circle' }}" style="font-size: 2rem;"></i>
+    <h3>{{ prediction.message }}</h3>
+    <p><strong>Confidence Score:</strong> {{ prediction.confidence }} / 1.00</p>
+    <p><strong>Assigned Cluster:</strong> {{ prediction.cluster }}</p>
+    <p><strong>PCA Position:</strong> ({{ "%.2f"|format(prediction.pca_x) }}, {{ "%.2f"|format(prediction.pca_y) }})</p>
+</div>
+<button onclick="downloadReport()" class="btn-download" style="background:#475569; margin:0 auto 30px auto; display:block; width:200px;">
+    <i class="fas fa-download"></i> Download Report (HTML)
+</button>
+{% endif %}
+
+<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+    <div style="flex:1; background: var(--card-bg); border-radius: 20px; padding: 20px;">
+        <canvas id="clusterChart" width="400" height="300"></canvas>
+    </div>
+    <div style="flex:1; background: var(--card-bg); border-radius: 20px; padding: 20px;">
+        <canvas id="fraudRateChart" width="400" height="300"></canvas>
+    </div>
+</div>
+
+<div style="margin-top: 30px; background: var(--card-bg); border-radius: 20px; padding: 20px;">
+    <canvas id="scatterChart" width="800" height="400"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const clusterCtx = document.getElementById('clusterChart').getContext('2d');
+new Chart(clusterCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ cluster_labels|safe }},
+        datasets: [{
+            label: 'Number of Claims',
+            data: {{ cluster_counts|safe }},
+            backgroundColor: '#3b82f6',
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#e0e0e0' } } },
+        scales: { y: { ticks: { color: '#e0e0e0' } }, x: { ticks: { color: '#e0e0e0' } } }
+    }
+});
+
+const fraudCtx = document.getElementById('fraudRateChart').getContext('2d');
+new Chart(fraudCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ cluster_labels|safe }},
+        datasets: [{
+            label: 'Fraud Rate (%)',
+            data: {{ cluster_fraud_rates|safe }},
+            backgroundColor: '#ef4444',
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#e0e0e0' } } },
+        scales: { y: { ticks: { color: '#e0e0e0' }, max: 100 } }
+    }
+});
+
+let scatterDatasets = [
+    {% for cluster_id, points in scatter_data.items() %}
+    {
+        label: 'Cluster {{ cluster_id }}',
+        data: {{ points|safe }},
+        backgroundColor: '{{ cluster_colors[cluster_id] }}',
+        pointRadius: 3,
+        pointHoverRadius: 5
+    },
+    {% endfor %}
+];
+
+{% if prediction %}
+scatterDatasets.push({
+    label: 'Your Claim',
+    data: [{ x: {{ prediction.pca_x }}, y: {{ prediction.pca_y }} }],
+    backgroundColor: '#ff0000',
+    pointRadius: 8,
+    pointHoverRadius: 12,
+    borderColor: '#ffffff',
+    borderWidth: 2
+});
+{% endif %}
+
+const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+new Chart(scatterCtx, {
+    type: 'scatter',
+    data: { datasets: scatterDatasets },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: '#e0e0e0' } },
+            tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: (${ctx.parsed.x.toFixed(2)}, ${ctx.parsed.y.toFixed(2)})` } }
+        },
+        scales: {
+            x: { title: { display: true, text: 'Principal Component 1', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' } },
+            y: { title: { display: true, text: 'Principal Component 2', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' } }
+        }
+    }
+});
+
+function downloadReport() {
+    const content = document.getElementById('reportContent');
+    if (!content) return;
+    const clone = content.cloneNode(true);
+    const style = document.createElement('style');
+    style.textContent = `
+        body { font-family: Arial, sans-serif; padding: 20px; background: white; color: black; }
+        .fraud { background: #ffcccc; padding: 20px; border-radius: 10px; }
+        .legit { background: #ccffcc; padding: 20px; border-radius: 10px; }
+        .result { margin: 20px 0; }
+    `;
+    const html = `<!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><title>Fraud Detection Report</title>${style.outerHTML}</head>
+    <body>${clone.outerHTML}<p style="margin-top:30px;">Generated on: ${new Date().toLocaleString()}</p></body>
+    </html>`;
+    const blob = new Blob([html], {type: 'text/html'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `fraud_report_${Date.now()}.html`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+</script>
+{% endblock %}
