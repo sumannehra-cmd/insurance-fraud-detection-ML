@@ -1,11 +1,6 @@
 pipeline {
     agent any
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/sumannehra-cmd/insurance-fraud-detection-ML.git'
-            }
-        }
         stage('Setup') {
             steps {
                 bat 'python -m venv venv'
