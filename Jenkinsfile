@@ -3,19 +3,19 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                bat 'python -m venv venv'
+                bat 'py -m venv venv'
                 bat 'venv\\Scripts\\activate && pip install -r requirements.txt'
             }
         }
         stage('Generate Data & Train') {
             steps {
-                bat 'python generate_data.py'
-                bat 'python train_model.py'
+                bat 'py generate_data.py'
+                bat 'py train_model.py'
             }
         }
         stage('Test') {
             steps {
-                bat 'venv\\Scripts\\activate && python -c "import pickle; print(\'Models loaded OK\')"'
+                bat 'venv\\Scripts\\activate && py -c "import pickle; print(\'Models loaded OK\')"'
             }
         }
         stage('Build Docker Image') {
