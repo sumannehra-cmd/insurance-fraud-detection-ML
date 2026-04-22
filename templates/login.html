@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-key"></i> Login</h2>
+<form method="POST">
+    <label><i class="fas fa-user"></i> Username</label>
+    <input type="text" name="username" required autofocus>
+    <label><i class="fas fa-lock"></i> Password</label>
+    <input type="password" name="password" required>
+    <button type="submit"><i class="fas fa-sign-in-alt"></i> Login</button>
+</form>
+<p style="text-align:center; margin-top:20px;">Don't have an account? <a href="/register" style="color:#38bdf8;">Register here</a></p>
+{% endblock %}

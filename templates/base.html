@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Fraud Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0f1e;
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        /* Navbar */
+        .navbar {
+            background: #0f172a;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #1e293b;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .navbar a {
+            color: #94a3b8;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .navbar a:hover {
+            color: #38bdf8;
+        }
+        .navbar .right {
+            display: flex;
+            gap: 10px;
+        }
+        .brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+        /* Container */
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: #111827;
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: 1px solid #1e293b;
+            transition: transform 0.2s;
+        }
+        .container:hover {
+            transform: translateY(-5px);
+        }
+        /* Flash messages */
+        .flash-messages {
+            max-width: 700px;
+            margin: 20px auto;
+        }
+        .alert {
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
+        .alert.success { background: #0f3b2c; color: #4ade80; border-left: 4px solid #4ade80; }
+        .alert.danger { background: #3b1e2a; color: #f87171; border-left: 4px solid #f87171; }
+        .alert.info { background: #1e293b; color: #38bdf8; border-left: 4px solid #38bdf8; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Form elements */
+        label {
+            display: block;
+            margin-top: 20px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            color: #f1f5f9;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.2);
+        }
+        button {
+            width: 100%;
+            margin-top: 30px;
+            padding: 12px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            transform: scale(1.02);
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        /* Result card */
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            animation: fadeIn 0.5s;
+        }
+        .fraud {
+            background: linear-gradient(135deg, #7f1a1a, #991b1b);
+            border: 1px solid #ef4444;
+            box-shadow: 0 0 15px rgba(239,68,68,0.3);
+        }
+        .legit {
+            background: linear-gradient(135deg, #064e3b, #065f46);
+            border: 1px solid #10b981;
+            box-shadow: 0 0 15px rgba(16,185,129,0.3);
+        }
+        .error {
+            background: #2d1f1f;
+            border: 1px solid #f97316;
+        }
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #f1f5f9;
+        }
+        h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px;
+        }
+        .spinner {
+            border: 4px solid #1e293b;
+            border-top: 4px solid #38bdf8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #475569;
+            font-size: 0.8rem;
+        }
+        @media (max-width: 768px) {
+            .container { margin: 20px; padding: 1.5rem; }
+            .navbar { flex-direction: column; gap: 10px; }
+        }
+    </style>
+    <!-- Add FontAwesome for icons (optional) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="brand"><i class="fas fa-shield-alt"></i> FraudDetect</div>
+        <div>
+            <a href="/fraud"><i class="fas fa-chart-line"></i> Detection</a>
+            {% if current_user.is_authenticated %}
+                <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout ({{ current_user.username }})</a>
+            {% else %}
+                <a href="/login"><i class="fas fa-sign-in-alt"></i> Login</a>
+                <a href="/register"><i class="fas fa-user-plus"></i> Register</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}"><i class="fas fa-info-circle"></i> {{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+    <footer>
+        <i class="fas fa-robot"></i> AI-powered Insurance Fraud Detection | Anomaly + Clustering
+    </footer>
+
+    <script>
+        // Add loading spinner on form submit
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const btn = form.querySelector('button[type="submit"]');
+                    if(btn) {
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                        btn.disabled = true;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
