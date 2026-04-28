@@ -8,4 +8,3 @@ services:
       - ./models:/app/models
       - ./data:/app/data
       - ./users.db:/app/users.db
-    restart: unless-stopped
